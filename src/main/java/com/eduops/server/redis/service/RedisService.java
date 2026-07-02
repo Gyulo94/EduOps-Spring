@@ -1,0 +1,37 @@
+package com.eduops.server.redis.service;
+
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+@SuppressWarnings("null")
+public class RedisService {
+
+  private final RedisTemplate<String, String> redisTemplate;
+
+  public RedisService(RedisTemplate<String, String> redisTemplate) {
+    this.redisTemplate = redisTemplate;
+  }
+
+  public void set(String key, String value, Long expiredTime) {
+    if (expiredTime != null) {
+      redisTemplate.opsForValue().set(key, value, expiredTime, TimeUnit.SECONDS);
+    } else {
+      redisTemplate.opsForValue().set(key, value);
+    }
+  }
+
+  public String get(String key) {
+    return redisTemplate.opsForValue().get(key);
+  }
+
+  public void del(String key) {
+    redisTemplate.delete(key);
+  }
+
+  public Boolean hasKey(String key) {
+    return redisTemplate.hasKey(key);
+  }
+}
