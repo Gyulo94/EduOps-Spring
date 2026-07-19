@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.stereotype.Component;
 import com.eduops.server.global.constants.Constants;
@@ -30,28 +29,29 @@ public class JwtProvider {
     return Keys.hmacShaKeyFor(secretKeyBase64.getBytes(StandardCharsets.UTF_8));
   }
 
-  public String createAccessToken(UUID id, String role) {
+  public String createAccessToken(JwtPayload payload) {
     Instant now = Instant.now();
     Instant expiryInstant = now.plus(Duration.ofSeconds(constants.getJwtExpiresIn()));
     Date expiredAt = Date.from(expiryInstant);
 
     return Jwts.builder()
         .signWith(getSigningKey(constants.getJwtSecretKey()), SignatureAlgorithm.HS256)
-        .setSubject(id.toString())
-        .claim("role", role)
+        .setSubject(payload.getId().toString())
+        .claim("role", payload.getRole())
         .setIssuedAt(Date.from(now))
         .setExpiration(expiredAt)
         .compact();
   }
 
-  public String createRefreshToken(UUID id) {
+  public String createRefreshToken(JwtPayload payload) {
     Instant now = Instant.now();
     Instant expiryInstant = now.plus(Duration.ofSeconds(constants.getJwtRefreshExpiresIn()));
     Date expiredAt = Date.from(expiryInstant);
 
     return Jwts.builder()
         .signWith(getSigningKey(constants.getJwtRefreshSecretKey()), SignatureAlgorithm.HS256)
-        .setSubject(id.toString())
+        .setSubject(payload.getId().toString())
+        .claim("role", payload.getRole())
         .setIssuedAt(Date.from(now))
         .setExpiration(expiredAt)
         .compact();

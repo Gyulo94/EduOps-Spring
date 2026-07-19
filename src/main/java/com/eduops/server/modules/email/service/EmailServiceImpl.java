@@ -28,17 +28,18 @@ public class EmailServiceImpl implements EmailService {
   @Qualifier("emailWebClient")
   private final WebClient webClient;
   private final ObjectMapper objectMapper;
+  private final RedisKey redisKey;
 
   public void sendVerificationEmail(String type, Payload payload) {
 
     UUID token = UUID.randomUUID();
 
-    String redisKey;
+    String REDIS_KEY;
 
     if (type.equals("register")) {
-      redisKey = RedisKey.verificationRegister(token);
+      REDIS_KEY = redisKey.verificationRegister(token);
     } else if (type.equals("reset")) {
-      redisKey = RedisKey.verificationReset(token);
+      REDIS_KEY = redisKey.verificationReset(token);
     } else {
       throw new ApiException(ErrorCode.BAD_REQUEST);
     }
@@ -50,7 +51,7 @@ public class EmailServiceImpl implements EmailService {
       throw new ApiException(ErrorCode.SERVER_ERROR);
     }
 
-    redis.set(redisKey, jsonPayload, 900L);
+    redis.set(REDIS_KEY, jsonPayload, 900L);
 
     String path = type.equals("register") ? "register/verify" : "reset-password/verify";
     String url = constants.getClientUrl() + "/" + path + "?token=" + token.toString();

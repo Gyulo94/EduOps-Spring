@@ -23,11 +23,12 @@ public enum ErrorCode implements ErrorCodeInterface {
   INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 액세스 토큰입니다."),
   VERIFICATION_TOKEN_INVALID(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 인증 토큰입니다."),
   VERIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(), "인증에 실패했습니다."),
+  INVALID_EMAIL_OR_PASSWORD(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 올바르지 않습니다."),
 
   // 회원 관련 에러
   USER_ALREADY_EXISTS(HttpStatus.CONFLICT.value(), "이미 존재하는 사용자입니다."),
   PHONE_ALREADY_EXISTS(HttpStatus.CONFLICT.value(), "이미 존재하는 전화번호입니다."),
-  ;
+  USER_INACTIVE(HttpStatus.FORBIDDEN.value(), "비활성화된 계정입니다. 관리자에게 문의하세요."),;
 
   private final Integer httpStatusCode;
   private final String message;

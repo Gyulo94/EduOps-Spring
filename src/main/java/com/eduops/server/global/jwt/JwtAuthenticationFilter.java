@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.eduops.server.global.error.ErrorCode;
 import com.eduops.server.global.exception.ApiException;
+import com.eduops.server.modules.user.entity.Role;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -30,7 +31,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtProvider jwtProvider;
 
   @Override
-  @SuppressWarnings("null")
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
@@ -51,12 +51,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
 
       UUID userId = UUID.fromString(claims.getSubject());
+      Role role = Role.valueOf(claims.get("role", String.class));
       if (userId == null) {
         throw new ApiException(ErrorCode.INVALID_ACCESS_TOKEN);
       }
 
       UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-          new JwtPayload(userId), null, null);
+          new JwtPayload(userId, role), null, null);
 
       authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

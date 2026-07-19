@@ -3,11 +3,17 @@ package com.eduops.server.modules.auth.service;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.eduops.server.modules.user.entity.UserStatus;
 import org.springframework.stereotype.Service;
 
 import com.eduops.server.global.error.ErrorCode;
 import com.eduops.server.global.exception.ApiException;
+import com.eduops.server.modules.auth.request.AuthRequest;
+import com.eduops.server.modules.auth.response.TokenResponse;
 import com.eduops.server.modules.email.request.UserPayload;
+import com.eduops.server.global.jwt.JwtPayload;
+import com.eduops.server.global.jwt.JwtProvider;
 import com.eduops.server.modules.email.service.EmailService;
 import com.eduops.server.modules.user.entity.User;
 import com.eduops.server.modules.user.request.CreateUserRequest;
@@ -28,6 +34,9 @@ public class AuthServiceImpl implements AuthService {
   private final EmailService emailService;
   private final RedisService redis;
   private final ObjectMapper objectMapper;
+  private final PasswordEncoder passwordEncoder;
+  private final RedisKey redisKey;
+  private final JwtProvider jwtProvider;
 
   @Override
   public void register(CreateUserRequest request) {
@@ -69,13 +78,11 @@ public class AuthServiceImpl implements AuthService {
   }
 
   private void verifyRegister(UUID token) {
-    String redisKey = RedisKey.verificationRegister(token);
-    String cachedUserData = redis.get(redisKey);
+    String REDIS_KEY = redisKey.verificationRegister(token);
+    String cachedUserData = redis.get(REDIS_KEY);
     if (cachedUserData == null) {
       throw new ApiException(ErrorCode.VERIFICATION_TOKEN_INVALID);
     }
-
-    log.info("============================ Verifying cachedUserData: {} ============================", cachedUserData);
 
     CreateUserRequest userData;
     try {
@@ -85,12 +92,56 @@ public class AuthServiceImpl implements AuthService {
     }
     User user = userService.findByEmail(userData.getEmail());
     if (user != null) {
-      redis.del(redisKey);
+      redis.del(REDIS_KEY);
       throw new ApiException(ErrorCode.USER_ALREADY_EXISTS);
     }
 
     userService.create(userData);
 
-    redis.del(redisKey);
+    redis.del(REDIS_KEY);
+  }
+
+  @Override
+  public TokenResponse login(AuthRequest request) {
+    User user = validateUser(request);
+
+    System.out.println("★ User Status: " + (user.getStatus() != null ? user.getStatus().name() : "NULL"));
+
+    if (user.getStatus() == UserStatus.INACTIVE) {
+      throw new ApiException(ErrorCode.USER_INACTIVE);
+    }
+
+    String REDIS_KEY = redisKey.userRefreshToken(user.getId());
+
+    JwtPayload payload = new JwtPayload(user.getId(), user.getRole());
+
+    TokenResponse tokens = generateTokens(payload);
+
+    String existingToken = redis.get(REDIS_KEY);
+    if (existingToken != null) {
+      redis.del(REDIS_KEY);
+    }
+    redis.set(REDIS_KEY, tokens.getRefreshToken(), 7 * 24 * 60 * 60L);
+
+    return tokens;
+  }
+
+  private User validateUser(AuthRequest request) {
+    String email = request.getEmail();
+    String password = request.getPassword();
+
+    User user = userService.findByEmail(email);
+    if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+      return user;
+    } else {
+      throw new ApiException(ErrorCode.INVALID_EMAIL_OR_PASSWORD);
+    }
+  }
+
+  private TokenResponse generateTokens(JwtPayload payload) {
+    String accessToken = jwtProvider.createAccessToken(payload);
+    String refreshToken = jwtProvider.createRefreshToken(payload);
+    TokenResponse response = TokenResponse.of(accessToken, refreshToken);
+    return response;
   }
 }
