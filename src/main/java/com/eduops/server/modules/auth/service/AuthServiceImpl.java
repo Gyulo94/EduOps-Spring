@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.eduops.server.global.error.ErrorCode;
 import com.eduops.server.global.exception.ApiException;
 import com.eduops.server.modules.auth.request.AuthRequest;
+import com.eduops.server.modules.auth.request.ResetPasswordRequest;
 import com.eduops.server.modules.auth.response.TokenResponse;
 import com.eduops.server.modules.email.request.UserPayload;
 import com.eduops.server.global.jwt.JwtPayload;
@@ -105,8 +106,6 @@ public class AuthServiceImpl implements AuthService {
   public TokenResponse login(AuthRequest request) {
     User user = validateUser(request);
 
-    System.out.println("★ User Status: " + (user.getStatus() != null ? user.getStatus().name() : "NULL"));
-
     if (user.getStatus() == UserStatus.INACTIVE) {
       throw new ApiException(ErrorCode.USER_INACTIVE);
     }
@@ -144,4 +143,26 @@ public class AuthServiceImpl implements AuthService {
     TokenResponse response = TokenResponse.of(accessToken, refreshToken);
     return response;
   }
+
+  @Override
+  public void sendResetPasswordMail(Map<String, String> request) {
+    String email = request.get("email");
+    String type = request.get("type");
+
+    User user = userService.findByEmail(email);
+    if (user == null) {
+      throw new ApiException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    UserPayload userPayload = new UserPayload();
+    userPayload.setEmail(user.getEmail());
+
+    emailService.sendVerificationEmail(type, userPayload);
+  }
+
+  @Override
+  public void resetPassword(ResetPasswordRequest request) {
+    userService.resetPassword(request);
+  }
+
 }

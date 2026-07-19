@@ -1,15 +1,19 @@
 package com.eduops.server.modules.auth.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eduops.server.global.api.Api;
 import com.eduops.server.global.message.ResponseMessage;
 import com.eduops.server.modules.auth.request.AuthRequest;
+import com.eduops.server.modules.auth.request.ResetPasswordRequest;
 import com.eduops.server.modules.auth.response.TokenResponse;
 import com.eduops.server.modules.auth.service.AuthService;
 import com.eduops.server.modules.user.request.CreateUserRequest;
@@ -45,5 +49,26 @@ public class AuthController {
     TokenResponse tokens = authService.login(request);
     cookieProvider.setCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
     return Api.OK();
+  }
+
+  @PostMapping("reset-password/send")
+  public Api<Void> sendResetPasswordMail(@RequestBody Map<String, String> request) {
+    authService.sendResetPasswordMail(request);
+    return Api.OK(ResponseMessage.VERIFICATION_EMAIL_SENT);
+  }
+
+  @GetMapping("reset-password/verify")
+  public Api<Void> resetPasswordVerify(@RequestParam("token") String token) {
+    Map<String, String> request = new HashMap<>();
+    request.put("token", token);
+    request.put("type", "reset");
+    authService.verify(request);
+    return Api.OK(ResponseMessage.VERIFICATION_SUCCESS);
+  }
+
+  @PostMapping("reset-password")
+  public Api<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    authService.resetPassword(request);
+    return Api.OK(ResponseMessage.PASSWORD_RESET_SUCCESS);
   }
 }

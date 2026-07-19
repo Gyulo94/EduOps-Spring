@@ -1,7 +1,7 @@
 package com.eduops.server.modules.auth.service;
 
 import java.util.Map;
-
+import com.eduops.server.modules.auth.request.ResetPasswordRequest;
 import com.eduops.server.modules.auth.request.AuthRequest;
 import com.eduops.server.modules.auth.response.TokenResponse;
 import com.eduops.server.modules.user.request.CreateUserRequest;
@@ -13,5 +13,9 @@ public interface AuthService {
   void verify(Map<String, String> request);
 
   TokenResponse login(AuthRequest request);
+
+  void resetPassword(ResetPasswordRequest request);
+
+  void sendResetPasswordMail(Map<String, String> request);
 
 }

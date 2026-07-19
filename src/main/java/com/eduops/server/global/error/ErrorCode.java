@@ -26,6 +26,7 @@ public enum ErrorCode implements ErrorCodeInterface {
   INVALID_EMAIL_OR_PASSWORD(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 올바르지 않습니다."),
 
   // 회원 관련 에러
+  USER_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "사용자를 찾을 수 없습니다."),
   USER_ALREADY_EXISTS(HttpStatus.CONFLICT.value(), "이미 존재하는 사용자입니다."),
   PHONE_ALREADY_EXISTS(HttpStatus.CONFLICT.value(), "이미 존재하는 전화번호입니다."),
   USER_INACTIVE(HttpStatus.FORBIDDEN.value(), "비활성화된 계정입니다. 관리자에게 문의하세요."),;

@@ -66,4 +66,7 @@ public class User {
   @Column(name = "employment_status", nullable = false)
   private EmploymentStatus employmentStatus = EmploymentStatus.WORKING;
 
+  public void setPassword(String password) {
+    this.password = password;
+  }
 }
